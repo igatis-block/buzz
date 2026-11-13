@@ -5,6 +5,7 @@ import 'dart:isolate';
 import 'package:buzz/shared/crypto/event_signing.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:http/http.dart' as http;
+import 'package:nostr/nostr.dart' as nostr;
 
 import '../relay/relay.dart';
 import '../me/me_sync.dart';
@@ -136,7 +137,11 @@ Set<String>? _archived(List<NostrEvent> events, String authority) {
   }
   final encoded = jsonEncode(event.toJson());
   if (utf8.encode(encoded).length > 2 * 1024 * 1024) return null;
-  verifiedNostrEventFromJson(encoded);
+  try {
+    verifiedNostrEventFromJson(encoded);
+  } on nostr.EventValidationException {
+    return null;
+  }
   return {
     for (final tag in event.tags)
       if (tag.length >= 2 &&
